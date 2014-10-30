@@ -8,7 +8,7 @@ import (
 )
 
 type WXAuth struct {
-	Token string
+	token string
 }
 
 // 用户发送的消息
@@ -29,6 +29,13 @@ type WXUserMsg struct {
 	MsgId        int64
 }
 
+type WXArticle struct {
+	Title       string
+	Description string
+	PicUrl      string
+	Url         string
+}
+
 // 回复消息
 type WXReplyMsg struct {
 	ToUserName   string
@@ -36,7 +43,15 @@ type WXReplyMsg struct {
 	CreateTime   int64
 	MsgType      string
 	Content      string
+	MusicUrl     string
+	HQMusicUrl   string
+	ArticleCount int
+	Articles     []WXArticle `xml:Articles>item`
 	FuncFlag     int
+}
+
+func CreateWXAuth(token string) *WXAuth {
+	return &WXAuth{token: token}
 }
 
 // http://mp.weixin.qq.com/wiki/index.php?title=%E6%B6%88%E6%81%AF%E6%8E%A5%E5%8F%A3%E6%8C%87%E5%8D%97
@@ -48,8 +63,8 @@ type WXReplyMsg struct {
 //   s: signature
 //   t: timestamp
 //   n: nonce
-func (wx WXAuth) CheckSignature(s, t, n string) (err error) {
-	params := []string{t, n, wx.Token}
+func (wx *WXAuth) CheckSignature(s, t, n string) (err error) {
+	params := []string{t, n, wx.token}
 	sort.Sort(sort.StringSlice(params))
 
 	res := string(sha1.New().Sum([]byte(params[0] + params[1] + params[2])))
@@ -60,7 +75,7 @@ func (wx WXAuth) CheckSignature(s, t, n string) (err error) {
 	return fmt.Errorf("signature not equal with sha1(timestamp+token+nonce): signature=%s sha1=%s!", s, res)
 }
 
-func DecodeWXMsg(b []byte) (msg WXUserMsg, err error) {
+func DecodeWXUserMsg(b []byte) (msg WXUserMsg, err error) {
 	err = xml.Unmarshal(b, &msg)
 	if err != nil {
 		return
