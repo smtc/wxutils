@@ -2,8 +2,10 @@ package wxutils
 
 import (
 	"crypto/sha1"
+	//"encoding/base64"
 	"encoding/xml"
 	"fmt"
+	//"io"
 	"sort"
 )
 
@@ -66,8 +68,12 @@ func CreateWXAuth(token string) *WXAuth {
 func (wx *WXAuth) CheckSignature(s, t, n string) (err error) {
 	params := []string{t, n, wx.token}
 	sort.Sort(sort.StringSlice(params))
+	param := params[0] + params[1] + params[2]
 
-	res := string(sha1.New().Sum([]byte(params[0] + params[1] + params[2])))
+	sha := sha1.New()
+	sha.Write([]byte(param))
+	res := fmt.Sprintf("%x", string(sha.Sum(nil)[0:]))
+
 	if res == s {
 		return nil
 	}
